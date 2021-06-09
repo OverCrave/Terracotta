@@ -8,9 +8,14 @@ namespace Terracotta
 
         public static void Main(string[] args)
         {
+            if (args is null)
+            {
+                Console.WriteLine("No args given..");
+            }
+
             serverRunning = true;
 
-            Server server = new Server();
+            Server server = new();
             server.Start();
 
             while (serverRunning)

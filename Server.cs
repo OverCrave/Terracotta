@@ -12,9 +12,16 @@ namespace Terracotta
     {
         private TcpListener listener;
         private IPEndPoint endpoint;
+        public List<Client> clients;
+
+        public static Server I { get; set; }
 
         internal void Start()
         {
+            I = this;
+
+            clients = new List<Client>();
+
             Console.WriteLine("Server starting!");
 
             byte[] ip = new byte[4] { 127, 0, 0, 1 };
@@ -28,8 +35,11 @@ namespace Terracotta
         private void OnClientConnect(IAsyncResult ar)
         {
             Console.WriteLine("Client connecting!");
-            TcpClient newClient = (TcpClient)ar;
+            TcpClient newClient = listener.EndAcceptTcpClient(ar);
             listener.BeginAcceptTcpClient(OnClientConnect, null);
+            Client c = new(newClient, clients.Count + 1);
+            clients.Add(c);
+            c.Init();
         }
     }
 }
