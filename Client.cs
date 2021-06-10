@@ -11,7 +11,7 @@ using static Terracotta.Packethandling.PacketDictionary;
 
 namespace Terracotta
 {
-    public class Client
+    public class Client : IDisposable
     {
         private TcpClient socket;
         private IPEndPoint ip;
@@ -19,7 +19,8 @@ namespace Terracotta
         private byte[] recBuffer;
         internal Guid ID;
         public State clientState = State.Handshake;
-        private int bSize = 8192;
+        private int bSize = 2097151; //The maximum size a packet can have
+        private bool disposedValue = false;
 
         internal Client(TcpClient client, Guid clientID)
         {
@@ -55,12 +56,17 @@ namespace Terracotta
 
                 Handle(ID, temp);
 
+                if (stream == null)
+                {
+                    return;
+                }
+
                 stream.BeginRead(recBuffer, 0, bSize, OnPacketReceived, null);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                Disconnect();
+                Dispose();
             }
         }
 
@@ -110,11 +116,32 @@ namespace Terracotta
             }
         }
 
-        public void Disconnect()
+        private void Disconnect()
         {
             Console.WriteLine("Client " + ID.ToString() + " disconnected");
             Server.I.clients.Remove(ID);
+            stream.Close();
+            stream = null;
             socket.Close();
+            socket = null;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    Disconnect();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

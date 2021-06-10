@@ -33,7 +33,7 @@ namespace Terracotta.Packethandling.Serverbound.Handshake
                 stpacket.Invoke(clientID, null);
             }
 
-            Server.I.clients[clientID].Disconnect();
+            Server.I.clients[clientID].Dispose();
         }
     }
 }
