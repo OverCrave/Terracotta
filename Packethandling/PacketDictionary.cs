@@ -15,7 +15,7 @@ namespace Terracotta.Packethandling
 {
     public static class PacketDictionary
     {
-        public delegate void Packet(int clientID, byte[] pData);
+        public delegate void Packet(Guid clientID, byte[] pData);
 
         public static Dictionary<int, Packet> v1_17_0_Handshake { get; } = new Dictionary<int, Packet>()
         {

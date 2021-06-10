@@ -17,10 +17,11 @@ namespace Terracotta
         private IPEndPoint ip;
         internal NetworkStream stream;
         private byte[] recBuffer;
-        internal int ID;
+        internal Guid ID;
         public State clientState = State.Handshake;
+        private int bSize = 8192;
 
-        internal Client(TcpClient client, int clientID)
+        internal Client(TcpClient client, Guid clientID)
         {
             ID = clientID;
             socket = client;
@@ -30,12 +31,11 @@ namespace Terracotta
 
         internal void Init()
         {
-            int s = 4096;
-            recBuffer = new byte[s];
-            socket.SendBufferSize = s;
-            socket.ReceiveBufferSize = s;
+            recBuffer = new byte[bSize];
+            socket.SendBufferSize = bSize;
+            socket.ReceiveBufferSize = bSize;
             stream = socket.GetStream();
-            stream.BeginRead(recBuffer, 0, s, OnPacketReceived, null);
+            stream.BeginRead(recBuffer, 0, bSize, OnPacketReceived, null);
         }
 
         private void OnPacketReceived(IAsyncResult ar)
@@ -46,16 +46,16 @@ namespace Terracotta
 
                 if (l <= 0)
                 {
-                    Disconnect();
                     return;
                 }
 
                 byte[] temp = new byte[l];
                 Array.Copy(recBuffer, temp, l);
+                recBuffer = new byte[bSize];
 
                 Handle(ID, temp);
 
-                stream.BeginRead(recBuffer, 0, 4096, OnPacketReceived, null);
+                stream.BeginRead(recBuffer, 0, bSize, OnPacketReceived, null);
             }
             catch (Exception e)
             {
@@ -64,7 +64,7 @@ namespace Terracotta
             }
         }
 
-        public void Handle(int clientID, byte[] pData)
+        public void Handle(Guid clientID, byte[] pData)
         {
             DataHandler handler = new();
             handler.Write(pData);
@@ -73,7 +73,7 @@ namespace Terracotta
             int packetID = handler.ReadVarInt();
             handler.Dispose();
 
-            Console.WriteLine("Client " + ID.ToString() + " sent a " + clientState.ToString() + " packet!");
+            Console.WriteLine("Client " + ID.ToString() + " sent a " + clientState.ToString() + " packet with ID " + packetID + "!");
 
             switch (clientState)
             {
@@ -110,10 +110,10 @@ namespace Terracotta
             }
         }
 
-        private void Disconnect()
+        public void Disconnect()
         {
             Console.WriteLine("Client " + ID.ToString() + " disconnected");
-            Server.I.clients.Remove(this);
+            Server.I.clients.Remove(ID);
             socket.Close();
         }
     }

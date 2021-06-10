@@ -14,7 +14,7 @@ namespace Terracotta
     {
         private TcpListener listener;
         private IPEndPoint endpoint;
-        public List<Client> clients;
+        public Dictionary<Guid, Client> clients;
 
         public Dictionary<int, Packet> handshakePackets;
         public Dictionary<int, Packet> statusPackets;
@@ -57,7 +57,7 @@ namespace Terracotta
                     break;
             }
 
-            clients = new List<Client>();
+            clients = new();
 
             Console.WriteLine("Server starting!");
 
@@ -73,8 +73,9 @@ namespace Terracotta
         {
             TcpClient newClient = listener.EndAcceptTcpClient(ar);
             listener.BeginAcceptTcpClient(OnClientConnect, null);
-            Client c = new(newClient, clients.Count + 1);
-            clients.Add(c);
+            Guid clientID = Guid.NewGuid();
+            Client c = new(newClient, clientID);
+            clients.Add(clientID, c);
             c.Init();
         }
     }

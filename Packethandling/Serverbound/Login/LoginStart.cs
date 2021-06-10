@@ -8,7 +8,7 @@ namespace Terracotta.Packethandling.Serverbound.Login
 {
     class LoginStart
     {
-        internal static void Handle(int clientID, byte[] pData)
+        internal static void Handle(Guid clientID, byte[] pData)
         {
             throw new NotImplementedException();
         }

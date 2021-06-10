@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Terracotta.Packethandling.PacketDictionary;
 
 namespace Terracotta.Packethandling.Serverbound.Handshake
 {
     class Handshake
     {
-        internal static void Handle(int clientID, byte[] pData)
+        internal static void Handle(Guid clientID, byte[] pData)
         {
             DataHandler handler = new();
             handler.Write(pData);
@@ -23,7 +24,16 @@ namespace Terracotta.Packethandling.Serverbound.Handshake
             handler.Dispose();
 
             Console.WriteLine("Client " + clientID + " requests to be put into state " + ((State)nextState).ToString());
-            Server.I.clients[clientID - 1].clientState = (State)nextState;
+            Server.I.clients[clientID].clientState = (State)nextState;
+
+            //Send a response immediately without waiting for a request packet
+            Server.I.statusPackets.TryGetValue(0x00, out Packet stpacket);
+            if (stpacket != null)
+            {
+                stpacket.Invoke(clientID, null);
+            }
+
+            Server.I.clients[clientID].Disconnect();
         }
     }
 }
