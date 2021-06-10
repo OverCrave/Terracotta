@@ -6,6 +6,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Terracotta.Packethandling;
+using static Terracotta.Packethandling.PacketDictionary;
 
 namespace Terracotta
 {
@@ -16,6 +18,7 @@ namespace Terracotta
         internal NetworkStream stream;
         private byte[] recBuffer;
         internal int ID;
+        public State clientState = State.Handshake;
 
         internal Client(TcpClient client, int clientID)
         {
@@ -37,22 +40,14 @@ namespace Terracotta
 
         private void OnPacketReceived(IAsyncResult ar)
         {
-            Console.WriteLine("Client " + ID.ToString() + " sent a packet!");
-
             try
             {
                 int l = stream.EndRead(ar);
-                if (l <= 0)
-                {
-                    Disconnect();
-                    return;
-                }
 
                 byte[] temp = new byte[l];
                 Array.Copy(recBuffer, temp, l);
 
-                HandlePacket handler = new HandlePacket();
-                handler.Handle(ID, temp);
+                Handle(ID, temp);
 
                 stream.BeginRead(recBuffer, 0, 4096, OnPacketReceived, null);
             }
@@ -61,6 +56,55 @@ namespace Terracotta
                 Console.WriteLine(e.Message);
                 Disconnect();
             }
+        }
+
+        public void Handle(int clientID, byte[] pData)
+        {
+            DataHandler handler = new(pData);
+
+            int packetLength = handler.ReadVarInt();
+            int packetID = handler.ReadVarInt();
+
+            byte[] rest = handler.GetRest();
+            handler.Dispose();
+
+            Console.WriteLine("Client " + ID.ToString() + " sent a " + clientState.ToString() + " packet!");
+
+            switch (clientState)
+            {
+                case State.Handshake:
+                    Server.I.handshakePackets.TryGetValue(packetID, out Packet hspacket);
+                    if (hspacket != null)
+                    {
+                        hspacket.Invoke(clientID, rest);
+                    }
+                    break;
+                case State.Status:
+                    Server.I.statusPackets.TryGetValue(packetID, out Packet stpacket);
+                    if (stpacket != null)
+                    {
+                        stpacket.Invoke(clientID, rest);
+                    }
+                    break;
+                case State.Login:
+                    Server.I.loginPackets.TryGetValue(packetID, out Packet lopacket);
+                    if (lopacket != null)
+                    {
+                        lopacket.Invoke(clientID, rest);
+                    }
+                    break;
+                case State.Play:
+                    Server.I.playPackets.TryGetValue(packetID, out Packet plpacket);
+                    if (plpacket != null)
+                    {
+                        plpacket.Invoke(clientID, rest);
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+
         }
 
         private void Disconnect()

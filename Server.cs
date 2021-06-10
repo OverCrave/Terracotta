@@ -5,6 +5,8 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Terracotta.Packethandling;
+using static Terracotta.Packethandling.PacketDictionary;
 
 namespace Terracotta
 {
@@ -14,11 +16,46 @@ namespace Terracotta
         private IPEndPoint endpoint;
         public List<Client> clients;
 
+        public Dictionary<int, Packet> handshakePackets;
+        public Dictionary<int, Packet> statusPackets;
+        public Dictionary<int, Packet> loginPackets;
+        public Dictionary<int, Packet> playPackets;
+
+        public ProtocolVersion targetVersion;
+
         public static Server I { get; set; }
 
         internal void Start()
         {
             I = this;
+
+            targetVersion = ProtocolVersion.v1_17_0;
+
+            switch (targetVersion)
+            {
+                case ProtocolVersion.v1_13_0:
+                    break;
+                case ProtocolVersion.v1_13_2:
+                    break;
+                case ProtocolVersion.v1_14_0:
+                    break;
+                case ProtocolVersion.v1_14_1:
+                    break;
+                case ProtocolVersion.v1_15_2:
+                    break;
+                case ProtocolVersion.v1_16_3:
+                    break;
+                case ProtocolVersion.v1_16_5:
+                    break;
+                case ProtocolVersion.v1_17_0:
+                    handshakePackets = v1_17_0_Handshake;
+                    statusPackets = v1_17_0_Status;
+                    loginPackets = v1_17_0_Login;
+                    playPackets = v1_17_0_Play;
+                    break;
+                default:
+                    break;
+            }
 
             clients = new List<Client>();
 
@@ -34,7 +71,6 @@ namespace Terracotta
 
         private void OnClientConnect(IAsyncResult ar)
         {
-            Console.WriteLine("Client connecting!");
             TcpClient newClient = listener.EndAcceptTcpClient(ar);
             listener.BeginAcceptTcpClient(OnClientConnect, null);
             Client c = new(newClient, clients.Count + 1);
