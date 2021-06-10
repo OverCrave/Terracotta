@@ -44,6 +44,12 @@ namespace Terracotta
             {
                 int l = stream.EndRead(ar);
 
+                if (l <= 0)
+                {
+                    Disconnect();
+                    return;
+                }
+
                 byte[] temp = new byte[l];
                 Array.Copy(recBuffer, temp, l);
 
@@ -60,12 +66,11 @@ namespace Terracotta
 
         public void Handle(int clientID, byte[] pData)
         {
-            DataHandler handler = new(pData);
+            DataHandler handler = new();
+            handler.Write(pData);
 
             int packetLength = handler.ReadVarInt();
             int packetID = handler.ReadVarInt();
-
-            byte[] rest = handler.GetRest();
             handler.Dispose();
 
             Console.WriteLine("Client " + ID.ToString() + " sent a " + clientState.ToString() + " packet!");
@@ -76,39 +81,38 @@ namespace Terracotta
                     Server.I.handshakePackets.TryGetValue(packetID, out Packet hspacket);
                     if (hspacket != null)
                     {
-                        hspacket.Invoke(clientID, rest);
+                        hspacket.Invoke(clientID, pData);
                     }
                     break;
                 case State.Status:
                     Server.I.statusPackets.TryGetValue(packetID, out Packet stpacket);
                     if (stpacket != null)
                     {
-                        stpacket.Invoke(clientID, rest);
+                        stpacket.Invoke(clientID, pData);
                     }
                     break;
                 case State.Login:
                     Server.I.loginPackets.TryGetValue(packetID, out Packet lopacket);
                     if (lopacket != null)
                     {
-                        lopacket.Invoke(clientID, rest);
+                        lopacket.Invoke(clientID, pData);
                     }
                     break;
                 case State.Play:
                     Server.I.playPackets.TryGetValue(packetID, out Packet plpacket);
                     if (plpacket != null)
                     {
-                        plpacket.Invoke(clientID, rest);
+                        plpacket.Invoke(clientID, pData);
                     }
                     break;
                 default:
                     break;
             }
-
-
         }
 
         private void Disconnect()
         {
+            Console.WriteLine("Client " + ID.ToString() + " disconnected");
             Server.I.clients.Remove(this);
             socket.Close();
         }

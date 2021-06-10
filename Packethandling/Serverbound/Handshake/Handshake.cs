@@ -10,11 +10,18 @@ namespace Terracotta.Packethandling.Serverbound.Handshake
     {
         internal static void Handle(int clientID, byte[] pData)
         {
-            DataHandler handler = new(pData);
+            DataHandler handler = new();
+            handler.Write(pData);
+
+            int packetLength = handler.ReadVarInt();
+            int packetID = handler.ReadVarInt();
             int clientProtocolVersion = handler.ReadVarInt();
             string endpoint = handler.ReadString();
             ushort port = handler.ReadUShort();
             int nextState = handler.ReadVarInt();
+
+            handler.Dispose();
+
             Console.WriteLine("Client " + clientID + " requests to be put into state " + ((State)nextState).ToString());
             Server.I.clients[clientID - 1].clientState = (State)nextState;
         }
