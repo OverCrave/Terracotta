@@ -19,21 +19,16 @@ namespace Terracotta.Packethandling.Serverbound.Handshake
             int clientProtocolVersion = handler.ReadVarInt();
             string endpoint = handler.ReadString();
             ushort port = handler.ReadUShort();
-            int nextState = handler.ReadVarInt();
+            State nextState = (State)handler.ReadVarInt();
 
-            handler.Dispose();
+            Server.I.clients[clientID].clientState = nextState;
 
-            Console.WriteLine("Client " + clientID + " requests to be put into state " + ((State)nextState).ToString());
-            Server.I.clients[clientID].clientState = (State)nextState;
-
-            //Send a response immediately without waiting for a request packet
-            Server.I.statusPackets.TryGetValue(0x00, out Packet stpacket);
-            if (stpacket != null)
+            if (handler.ByteCountLeft > 0)
             {
-                stpacket.Invoke(clientID, null);
+                Server.I.clients[clientID].Handle(clientID, handler.Remaining);
             }
 
-            Server.I.clients[clientID].Dispose();
+            handler.Dispose();
         }
     }
 }

@@ -24,6 +24,7 @@ namespace Terracotta.Packethandling
         public static Dictionary<int, Packet> v1_17_0_Status { get; } = new Dictionary<int, Packet>()
         {
             { 0x00, Request.Handle },
+            { 0x01, Ping.Handle },
         };
         public static Dictionary<int, Packet> v1_17_0_Login { get; } = new Dictionary<int, Packet>()
         {

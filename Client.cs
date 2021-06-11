@@ -47,6 +47,7 @@ namespace Terracotta
 
                 if (l <= 0)
                 {
+                    Dispose();
                     return;
                 }
 
@@ -66,7 +67,6 @@ namespace Terracotta
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                Dispose();
             }
         }
 

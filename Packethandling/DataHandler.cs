@@ -29,14 +29,23 @@ namespace Terracotta.Packethandling
             private set 
             {
                 readPos = value;
-            } 
+            }
         }
-        public byte[] Buffer 
-        { 
-            get 
-            { 
-                return mainBuffer.ToArray(); 
-            } 
+        public byte[] Buffer
+        {
+            get
+            {
+                return mainBuffer.ToArray();
+            }
+        }
+        public byte[] Remaining
+        {
+            get
+            {
+                byte[] temp = new byte[ByteCountLeft];
+                Array.Copy(Buffer, readPos, temp, 0, ByteCountLeft);
+                return temp;
+            }
         }
         public int ByteCount 
         { 

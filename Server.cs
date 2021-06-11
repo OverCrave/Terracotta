@@ -7,6 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Terracotta.Packethandling;
 using static Terracotta.Packethandling.PacketDictionary;
+using System.Security.Cryptography;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
 
 namespace Terracotta
 {
@@ -15,6 +21,7 @@ namespace Terracotta
         private TcpListener listener;
         private IPEndPoint endpoint;
         public Dictionary<Guid, Client> clients;
+        internal byte[] key;
 
         public Dictionary<int, Packet> handshakePackets;
         public Dictionary<int, Packet> statusPackets;
@@ -56,6 +63,13 @@ namespace Terracotta
                 default:
                     break;
             }
+
+            var generator = new RsaKeyPairGenerator();
+            generator.Init(new KeyGenerationParameters(new SecureRandom(), 1024));
+            var keyPair = generator.GenerateKeyPair();
+            RsaKeyParameters keyParam = (RsaKeyParameters)keyPair.Public;
+            var info = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(keyParam);
+            key = info.GetEncoded();
 
             clients = new();
 
